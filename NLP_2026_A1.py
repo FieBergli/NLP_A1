@@ -16,7 +16,6 @@ DO NOT SHARE/DISTRIBUTE SOLUTIONS WITHOUT THE INSTRUCTOR'S PERMISSION
 import re, doctest
 
 
-
 def validate1(s):
     """
     Checks whether the string is a valid employee ID using a single regular expression.
@@ -35,10 +34,12 @@ def validate1(s):
     >>> validate1('$0RQLpCHz49')
     False
     """
-    EMPLOYEE_RE = ...
+    s = s.lower()
+    EMPLOYEE_RE = r"^[a-z]{6,10}[0-9]{2}$"
     if re.search(EMPLOYEE_RE, s):
         return True
     return False
+
 
 def validate2(s):
     """
@@ -47,14 +48,13 @@ def validate2(s):
     >>> validate2('$0RQLpCHz49')
     False
     """
-    # Implement the validation another way, without using a regex or any libraries.
-    # You may use the .isalpha() and .isdigit() methods,
-    # variables, standard data structures such as lists,
-    # if statements, loops, etc.
-    # As far as a caller is concerned, this function should have the
-    # same behavior as validate1().
-    ...
-    return ...
+
+    letters = s[:-2]
+    digits = s[-2:]
+    if len(s) <= 12 and len(s) >= 8:
+        if letters.isalpha() and digits.isdigit():
+            return True
+    return False
 
 
 def dna_prob(seq):
@@ -77,9 +77,27 @@ def dna_prob(seq):
     >>> tbl['C']['G']
     0.5
     """
-    # You may use the collections module, but no other libraries.
-    ...
-    return ...
+    dna_dict = {}
+
+    for base in "ACGT":
+        dna_dict[base] = {"A": 0, "C": 0, "G": 0, "T": 0, "num_pairs": 0}
+
+    for i in range(len(seq) - 1):
+        b1 = seq[i]
+        b2 = seq[i + 1]
+
+        dna_dict[b1][b2] += 1
+        dna_dict[b1]["num_pairs"] += 1
+
+    for base in dna_dict:
+        num_pairs = dna_dict[base]["num_pairs"]
+        for next_base in "ACGT":
+            if num_pairs > 0:
+                dna_dict[base][next_base] = dna_dict[base][next_base] / num_pairs
+            else:
+                dna_dict[base][next_base] = 0
+
+    return dna_dict
 
 
 def dna_bp(seq):
@@ -91,9 +109,100 @@ def dna_bp(seq):
     >>> dna_bp('ATCGATTGAGCTCTAGCG')
     'TAGCTAACTCGAGATCGC'
     """
-    # Do not use any libraries.
-    # Hint: this can be done in one line. (More than one line is OK too.)
-    return ...
 
-if __name__=='__main__':
-    doctest.testmod() # This runs the doctests and prints any failures.
+    return (seq.replace("A", "x").replace("T", "A").replace("x", "T").replace("C", "y").replace("G", "C").replace("y", "G"))
+
+
+if __name__ == "__main__":
+    doctest.testmod()  # This runs the doctests and prints any failures.
+
+
+# ------------ Claud Generated solutions: --------------------------
+
+
+def validate1(s):
+    """
+    >>> validate1('AbCdEf00')
+    True
+    >>> validate1('$0RQLpCHz49')
+    False
+    """
+
+    EMPLOYEE_RE = r"^[A-Za-z]{6,10}\d{2}$"
+    if re.search(EMPLOYEE_RE, s):
+        return True
+    return False
+
+
+# Exactly similar to my solution, except I made all characters lower case for an easier regex pattern matching. I do not think this step decreases
+# readability as the regex [a-z] is easier to understand than [A-Za-z]. I think the efficiency is very similar. Both are correct.
+
+
+def validate2(s):
+    """
+    >>> validate2('AbCdEf00')
+    True
+    >>> validate2('$0RQLpCHz49')
+    False
+    """
+    if len(s) < 8 or len(s) > 12:
+        return False
+
+    if not s[-2:].isdigit():
+        return False
+
+    alpha_part = s[:-2]
+    if len(alpha_part) < 6 or len(alpha_part) > 10:
+        return False
+
+    if not alpha_part.isalpha():
+        return False
+
+    return True
+
+
+# My version is more concise, but the claude version could be considered more readable because it checks each condition separately with early returns. 
+# So it's an easier step-by-step solution. However, I think claude's code is a bit over-bloated, and with good variable names, my solution is very readable. 
+# Efficiency is similar. Both should be correct on valid and invalid ID lengths and variants.
+
+
+def dna_prob(seq):
+    """
+     >>> tbl = dna_prob('ATCGATTGAGCTCTAGCG')
+    >>> tbl['T']['T']
+    0.2
+    >>> tbl['G']['A']
+    0.5
+    >>> tbl['C']['G']
+    0.5
+    """
+
+    counts = {}
+    for i in range(len(seq) - 1):
+        b1, b2 = seq[i], seq[i + 1]
+        if b1 not in counts:
+            counts[b1] = {}
+        counts[b1][b2] = counts[b1].get(b2, 0) + 1
+
+    table = {}
+    for b1, successors in counts.items():
+        total = sum(successors.values())
+        table[b1] = {b2: count / total for b2, count in successors.items()}
+
+    return table
+
+# My solution is more correct on hidden cases because unseen base pairs still map to 0. Claude's version would fail on some cases because missing pairs are not included.
+# My solution is less concise and could be considered more readable since every base pair is stored explicitly. Claude's version is shorter and slightly more efficient in space. 
+
+def dna_bp(seq):
+    """
+    Given a string representing a sequence of DNA bases,
+    returns the paired sequence, also as a string,
+    where A is always paired with T and C with G.
+    >>> dna_bp('ATCGATTGAGCTCTAGCG')
+    'TAGCTAACTCGAGATCGC'
+    """
+    return seq.translate(str.maketrans("ATCG", "TAGC"))
+
+
+# I think Claude's solution is cleaner and faster, using maketrans().  My version is correct, but awkward, and less efficient because it replaces characters several times.
